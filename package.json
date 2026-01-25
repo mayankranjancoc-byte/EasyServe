@@ -1,0 +1,12 @@
+{
+  "name": "easyserve",
+  "version": "1.0.0",
+  "description": "Smart Billing Assistant for small shop owners",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve ."
+  },
+  "keywords": ["billing", "offline", "ocr", "voice-assistant"],
+  "author": "",
+  "license": "MIT"
+}
