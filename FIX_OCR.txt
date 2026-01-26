@@ -1,0 +1,6 @@
+// Replace lines 1422-1431 in index.html with this:
+
+                // Remove data:image/...;base64, prefix - OCR.space needs only base64
+                const cleanBase64 = imageData.replace(/^data:image\/\w+;base64,/, '');
+                
+                formData.append('base64Image', cleanBase64);
