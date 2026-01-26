@@ -741,7 +741,11 @@
         <div id="homeScreen" class="screen active">
             <div class="header">
                 <div class="header-title">EasyServe</div>
-                <button class="icon-btn" onclick="showScreen('settingsScreen')">⚙️</button>
+                <div style="display:flex; gap:8px;">
+                    <button class="icon-btn" onclick="exportBills()" style="font-size:18px;"
+                        title="Export Bills">📥</button>
+                    <button class="icon-btn" onclick="showScreen('settingsScreen')">⚙️</button>
+                </div>
             </div>
             <div class="content">
                 <div class="stats-grid">
@@ -783,20 +787,25 @@
                 </div>
 
                 <div class="section-title" style="margin-bottom:12px;">Recent Bills</div>
-                <div style="display:flex; gap:8px; margin-bottom:16px;">
+                <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
                     <select id="statusFilter" onchange="filterBills()"
-                        style="flex:1; padding:10px; border:2px solid var(--border); border-radius:8px; font-size:14px; font-weight:500;">
+                        style="flex:1; padding:10px; border:2px solid var(--border); border-radius:8px; font-size:13px; font-weight:500;">
                         <option value="all">All Status</option>
                         <option value="paid">Paid Only</option>
                         <option value="pending">Pending Only</option>
                     </select>
-                    <select id="dateFilter" onchange="filterBills()"
-                        style="flex:1; padding:10px; border:2px solid var(--border); border-radius:8px; font-size:14px; font-weight:500;">
+                    <select id="dateFilter" onchange="toggleDateInput()"
+                        style="flex:1; padding:10px; border:2px solid var(--border); border-radius:8px; font-size:13px; font-weight:500;">
                         <option value="all">All Time</option>
                         <option value="today">Today</option>
                         <option value="week">This Week</option>
                         <option value="month">This Month</option>
+                        <option value="custom">Pick Date</option>
                     </select>
+                </div>
+                <div id="customDateContainer" style="display:none; margin-bottom:16px;">
+                    <input type="date" id="customDateInput" onchange="filterBills()"
+                        style="width:100%; padding:10px; border:2px solid var(--border); border-radius:8px; font-family:'Inter',sans-serif;">
                 </div>
                 <div id="recentBills"></div>
             </div>
@@ -1246,9 +1255,29 @@
             filterBills();
         }
 
+        filterBills();
+        }
+
+        function toggleDateInput() {
+            const dateFilter = document.getElementById('dateFilter').value;
+            const container = document.getElementById('customDateContainer');
+
+            if (dateFilter === 'custom') {
+                container.style.display = 'block';
+                // Set default to today if empty
+                if (!document.getElementById('customDateInput').value) {
+                    document.getElementById('customDateInput').valueAsDate = new Date();
+                }
+            } else {
+                container.style.display = 'none';
+            }
+            filterBills();
+        }
+
         function filterBills() {
             const statusFilter = document.getElementById('statusFilter')?.value || 'all';
             const dateFilter = document.getElementById('dateFilter')?.value || 'all';
+            const customDate = document.getElementById('customDateInput')?.value;
 
             let filtered = [...bills];
 
@@ -1272,8 +1301,13 @@
                 const monthAgo = new Date(now);
                 monthAgo.setMonth(now.getMonth() - 1);
                 filtered = filtered.filter(b => new Date(b.date) >= monthAgo);
+            } else if (dateFilter === 'custom' && customDate) {
+                const selectedDate = new Date(customDate).toDateString();
+                filtered = filtered.filter(b => new Date(b.date).toDateString() === selectedDate);
             }
 
+            // Always sort newest first
+            filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
 
             const recentHtml = filtered.slice(0, 10).map(bill => `
                 <div class="list-item" onclick="showBillPreview('${bill.id}')" style="cursor:pointer;">
@@ -1283,8 +1317,9 @@
                             ${bill.paymentStatus === 'paid' ? '✓ Paid' : '⏳ Pending'}
                         </span>
                     </div>
-                    <div style="font-size:13px; color:var(--text-muted); margin-top:4px;">
-                        Click to view details →
+                    <div style="font-size:13px; color:var(--text-muted); margin-top:4px; display:flex; justify-content:space-between;">
+                        <span>${new Date(bill.date).toLocaleDateString()}</span>
+                        <span>₹${bill.total}</span>
                     </div>
                 </div>
             `).join('');
@@ -1294,6 +1329,73 @@
                 : `<div style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">Showing ${Math.min(filtered.length, 10)} of ${filtered.length} bills</div>` + recentHtml;
 
             document.getElementById('recentBills').innerHTML = resultsText;
+
+            // Store filtered bills globally or make accessible for export if needed, 
+            // but exportBills() will re-filter to ensure it gets ALL matching bills, not just top 10
+        }
+
+        function exportBills() {
+            // Re-run filtering logic to get ALL matching records (not sliced)
+            const statusFilter = document.getElementById('statusFilter')?.value || 'all';
+            const dateFilter = document.getElementById('dateFilter')?.value || 'all';
+            const customDate = document.getElementById('customDateInput')?.value;
+
+            let filtered = [...bills];
+
+            if (statusFilter === 'paid') filtered = filtered.filter(b => b.paymentStatus === 'paid');
+            else if (statusFilter === 'pending') filtered = filtered.filter(b => b.paymentStatus === 'pending');
+
+            const now = new Date();
+            if (dateFilter === 'today') {
+                const today = now.toDateString();
+                filtered = filtered.filter(b => new Date(b.date).toDateString() === today);
+            } else if (dateFilter === 'week') {
+                const weekAgo = new Date(now);
+                weekAgo.setDate(now.getDate() - 7);
+                filtered = filtered.filter(b => new Date(b.date) >= weekAgo);
+            } else if (dateFilter === 'month') {
+                const monthAgo = new Date(now);
+                monthAgo.setMonth(now.getMonth() - 1);
+                filtered = filtered.filter(b => new Date(b.date) >= monthAgo);
+            } else if (dateFilter === 'custom' && customDate) {
+                const selectedDate = new Date(customDate).toDateString();
+                filtered = filtered.filter(b => new Date(b.date).toDateString() === selectedDate);
+            }
+
+            if (filtered.length === 0) {
+                showToast('No bills to export with current filters', 'error');
+                return;
+            }
+
+            // Generate CSV
+            const headers = ['Bill ID', 'Date', 'Customer', 'Items', 'Total Amount', 'Payment Method', 'Status'];
+            const rows = filtered.map(b => [
+                b.id,
+                new Date(b.date).toLocaleString(),
+                b.customerName || 'Walk-in',
+                b.items.map(i => `${i.name} (${i.qty})`).join('; '),
+                b.total,
+                b.paymentMethod,
+                b.paymentStatus
+            ]);
+
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+            ].join('\n');
+
+            // Download file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `bills_export_${new Date().toISOString().slice(0, 10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast(`Exported ${filtered.length} bills successfully!`, 'success');
         }
 
         function renderBillingScreen() {
