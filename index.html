@@ -894,10 +894,47 @@
             <div class="header">
                 <button class="icon-btn" onclick="showScreen('homeScreen')">←</button>
                 <div class="header-title">Inventory</div>
+                <button class="icon-btn" onclick="showInventorySummary()">📊</button>
             </div>
             <div class="content">
                 <input type="text" class="item-search" id="inventorySearch" placeholder="Search inventory..."
                     oninput="filterInventory()">
+
+                <!-- Filter Controls -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;">
+                    <select id="inventoryCategoryFilter" onchange="filterInventory()"
+                        style="padding:10px; border:2px solid var(--border); border-radius:8px; font-size:14px; font-weight:500;">
+                        <option value="all">All Categories</option>
+                        <option value="Grocery">Grocery</option>
+                        <option value="Dairy">Dairy</option>
+                        <option value="Snacks">Snacks</option>
+                        <option value="Beverages">Beverages</option>
+                        <option value="Household">Household</option>
+                        <option value="Personal Care">Personal Care</option>
+                        <option value="Stationery">Stationery</option>
+                    </select>
+                    <select id="inventoryStockFilter" onchange="filterInventory()"
+                        style="padding:10px; border:2px solid var(--border); border-radius:8px; font-size:14px; font-weight:500;">
+                        <option value="all">All Stock Status</option>
+                        <option value="low">⚠️ Low Stock</option>
+                        <option value="instock">✅ In Stock</option>
+                        <option value="outofstock">❌ Out of Stock</option>
+                    </select>
+                </div>
+
+                <!-- Sort Options -->
+                <div style="margin-bottom:16px;">
+                    <select id="inventorySortFilter" onchange="filterInventory()"
+                        style="width:100%; padding:10px; border:2px solid var(--border); border-radius:8px; font-size:14px; font-weight:500;">
+                        <option value="name-asc">📝 Name (A-Z)</option>
+                        <option value="name-desc">📝 Name (Z-A)</option>
+                        <option value="price-asc">💰 Price (Low to High)</option>
+                        <option value="price-desc">💰 Price (High to Low)</option>
+                        <option value="stock-asc">📦 Stock (Low to High)</option>
+                        <option value="stock-desc">📦 Stock (High to Low)</option>
+                    </select>
+                </div>
+
                 <div id="inventoryList"></div>
             </div>
         </div>
@@ -990,49 +1027,73 @@
         <div class="modal" id="checkoutModal">
             <div class="modal-content">
                 <h2 style="font-family:'Poppins',sans-serif; margin-bottom:20px;">Complete Payment</h2>
+
                 <div id="checkoutCart"></div>
+
                 <div style="margin:20px 0; padding:16px; background:var(--bg); border-radius:12px;">
                     <div style="margin-bottom:12px;">
-                        <label style="display:block; margin-bottom:8px; font-weight:600;">Discount (₹)</label>
-                        <input type="number" id="discountInput" value="0" min="0"
+                        <label style="display:block; margin-bottom:8px; font-weight:600;">Customer Name
+                            (Optional)</label>
+                        <input type="text" id="customerNameInput" placeholder="Enter customer name"
                             style="width:100%; padding:12px; border:2px solid var(--border); border-radius:8px;">
                     </div>
+
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; margin-bottom:8px; font-weight:600;">Discount (₹)</label>
+                        <input type="number" id="discountInput" value="0" min="0" onchange="updateCheckoutTotal()"
+                            style="width:100%; padding:12px; border:2px solid var(--border); border-radius:8px;">
+                    </div>
+
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; margin-bottom:8px; font-weight:600;">Subtotal:</label>
+                        <div style="font-size:16px; font-weight:600;" id="checkoutSubtotal">₹0</div>
+                    </div>
+
                     <div
-                        style="display:flex; justify-content:space-between; align-items:center; font-size:20px; font-weight:700; margin-top:16px;">
+                        style="display:flex; justify-content:space-between; align-items:center; font-size:20px; font-weight:700; margin-top:16px; padding-top:12px; border-top:2px solid var(--border);">
                         <span>Total:</span>
                         <span id="checkoutTotal" style="color:var(--primary);">₹0</span>
                     </div>
                 </div>
-                <option value="upi">UPI</option>
-                <option value="pending">Mark as Pending</option>
-                </select>
+
+                <div style="margin-bottom:20px;">
+                    <label style="display:block; margin-bottom:8px; font-weight:600;">Payment Method</label>
+                    <select id="paymentMethod"
+                        style="width:100%; padding:12px; border:2px solid var(--border); border-radius:8px; font-size:14px;">
+                        <option value="cash">💵 Cash</option>
+                        <option value="card">💳 Card</option>
+                        <option value="upi">📱 UPI</option>
+                        <option value="pending">⏳ Mark as Pending</option>
+                    </select>
+                </div>
+
+                <button class="btn-primary" onclick="completePayment()">Complete Bill</button>
+                <button class="btn-secondary" onclick="closeCheckoutModal()" style="margin-top:12px;">Cancel</button>
             </div>
-            <button class="btn-primary" onclick="completePayment()">Complete Bill</button>
-            <button class="btn-secondary" onclick="closeModal()" style="margin-top:12px;">Cancel</button>
         </div>
-    </div>
 
-    <!-- Bill Preview Modal -->
-    <div class="modal" id="billPreviewModal">
-        <div class="modal-content" style="max-width:400px;">
-            <div
-                style="text-align:center; margin-bottom:20px; padding-bottom:16px; border-bottom:2px dashed var(--border);">
-                <h2 style="font-family:'Poppins',sans-serif; margin-bottom:8px; font-size:22px;">SHARMA GENERAL STORE
-                </h2>
-                <div style="font-size:12px; color:var(--text-muted);">Near Main Market, Delhi - 110001</div>
-                <div style="font-size:12px; color:var(--text-muted);">Ph: +91 98765 43210</div>
+        <!-- Bill Preview Modal -->
+        <div class="modal" id="billPreviewModal">
+            <div class="modal-content" style="max-width:400px;">
+                <div
+                    style="text-align:center; margin-bottom:20px; padding-bottom:16px; border-bottom:2px dashed var(--border);">
+                    <h2 style="font-family:'Poppins',sans-serif; margin-bottom:8px; font-size:22px;">SHARMA GENERAL
+                        STORE
+                    </h2>
+                    <div style="font-size:12px; color:var(--text-muted);">Near Main Market, Delhi - 110001</div>
+                    <div style="font-size:12px; color:var(--text-muted);">Ph: +91 98765 43210</div>
+                </div>
+                <div id="billPreviewContent"></div>
+
+                <!-- Export Options -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:20px;">
+                    <button class="btn-secondary" onclick="exportBillAsText()">📋 Copy Text</button>
+                    <button class="btn-secondary" onclick="printBill()">🖨️ Print</button>
+                </div>
+
+                <button class="btn-primary" onclick="closeBillPreview()" style="margin-top:12px;">Close</button>
             </div>
-            <div id="billPreviewContent"></div>
-
-            <!-- Export Options -->
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:20px;">
-                <button class="btn-secondary" onclick="exportBillAsText()">📋 Copy Text</button>
-                <button class="btn-secondary" onclick="printBill()">🖨️ Print</button>
-            </div>
-
-            <button class="btn-primary" onclick="closeBillPreview()" style="margin-top:12px;">Close</button>
         </div>
-    </div>
     </div>
 
     <!-- Tesseract.js OCR Library -->
@@ -1374,14 +1435,21 @@
         }
 
         function completePayment() {
+            if (cart.length === 0) {
+                showToast('Cart is empty!', 'error');
+                return;
+            }
+
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
             const discount = parseInt(document.getElementById('discountInput').value) || 0;
             const total = subtotal - discount;
             const method = document.getElementById('paymentMethod').value;
+            const customerName = document.getElementById('customerNameInput').value.trim() || 'Walk-in Customer';
 
             const bill = {
                 id: `bill_${Date.now()}`,
                 date: new Date().toISOString(),
+                customerName: customerName,
                 items: cart.map(c => ({
                     itemId: c.id,
                     name: c.name,
@@ -1392,41 +1460,29 @@
                 subtotal: subtotal,
                 discount: discount,
                 total: total,
-                paymentMethod: method === 'pending' ? 'cash' : method,
+                paymentMethod: method,
                 paymentStatus: method === 'pending' ? 'pending' : 'paid'
             };
 
             bills.unshift(bill);
 
-            // Update inventory with history logging
-            cart.forEach(c => {
-                const item = items.find(i => i.id === c.id);
+            // Update inventory
+            cart.forEach(cartItem => {
+                const item = items.find(i => i.id === cartItem.id);
                 if (item) {
-                    const oldStock = item.stock;
-                    item.stock -= c.qty;
-
-                    // Log inventory change
-                    inventoryHistory.push({
-                        id: `hist_${Date.now()}_${c.id}`,
-                        itemId: c.id,
-                        itemName: c.name,
-                        type: 'sale',
-                        quantity: -c.qty,
-                        oldStock: oldStock,
-                        newStock: item.stock,
-                        date: new Date().toISOString(),
+                    date: new Date().toISOString(),
                         billId: bill.id,
-                        note: `Sold via Bill #${bill.id.slice(-6)}`
-                    });
-                }
+                            note: `Sold via Bill #${bill.id.slice(-6)}`
+                });
+        }
             });
 
-            saveData();
-            cart = [];
-            updateCart();
-            closeModal();
-            showToast('Bill created successfully!', 'success');
-            showScreen('homeScreen');
+        saveData();
+        cart = [];
+        updateCart();
+        closeModal();
+        showToast('Bill created successfully!', 'success');
+        showScreen('homeScreen');
         }
 
         function closeModal() {
@@ -1964,36 +2020,164 @@ Thank you for your business!
             filterInventory();
         }
 
+        function showInventorySummary() {
+            const totalItems = items.length;
+            const lowStock = items.filter(i => i.stock < i.lowStockThreshold && i.stock > 0);
+            const outOfStock = items.filter(i => i.stock === 0);
+            const totalValue = items.reduce((sum, i) => sum + (i.price * i.stock), 0);
+
+            const categoryStats = {};
+            CATEGORIES.slice(1).forEach(cat => {
+                const catItems = items.filter(i => i.category === cat);
+                categoryStats[cat] = {
+                    count: catItems.length,
+                    value: catItems.reduce((sum, i) => sum + (i.price * i.stock), 0)
+                };
+            });
+
+            const modalHtml = `
+                <div style="padding:20px;">
+                    <h3 style="margin-bottom:16px; font-family:'Poppins',sans-serif;">📊 Inventory Summary</h3>
+                    
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+                        <div style="padding:16px; background:linear-gradient(135deg,var(--primary),var(--accent)); color:white; border-radius:12px;">
+                            <div style="font-size:24px; font-weight:700;">${totalItems}</div>
+                            <div style="font-size:12px; opacity:0.9;">Total Items</div>
+                        </div>
+                        <div style="padding:16px; background:linear-gradient(135deg,var(--success),hsl(142,71%,55%)); color:white; border-radius:12px;">
+                            <div style="font-size:24px; font-weight:700;">₹${totalValue}</div>
+                            <div style="font-size:12px; opacity:0.9;">Total Value</div>
+                        </div>
+                        <div style="padding:16px; background:linear-gradient(135deg,var(--warning),hsl(45,93%,57%)); color:white; border-radius:12px;">
+                            <div style="font-size:24px; font-weight:700;">${lowStock.length}</div>
+                            <div style="font-size:12px; opacity:0.9;">Low Stock</div>
+                        </div>
+                        <div style="padding:16px; background:linear-gradient(135deg,var(--danger),hsl(0,84%,70%)); color:white; border-radius:12px;">
+                            <div style="font-size:24px; font-weight:700;">${outOfStock.length}</div>
+                            <div style="font-size:12px; opacity:0.9;">Out of Stock</div>
+                        </div>
+                    </div>
+
+                    <h4 style="margin-bottom:12px;">Category Breakdown</h4>
+                    ${Object.entries(categoryStats).map(([cat, stats]) => `
+                        <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid var(--border);">
+                            <span>${cat}</span>
+                            <span>${stats.count} items · ₹${stats.value}</span>
+                        </div>
+                    `).join('')}
+
+                    <button class="btn-primary" onclick="document.getElementById('inventorySummaryModal').classList.remove('active')" style="margin-top:20px; width:100%;">Close</button>
+                </div>
+            `;
+
+            let modal = document.getElementById('inventorySummaryModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'inventorySummaryModal';
+                modal.className = 'modal';
+                modal.innerHTML = '<div class="modal-content" style="max-width:400px;"></div>';
+                document.body.appendChild(modal);
+            }
+
+            modal.querySelector('.modal-content').innerHTML = modalHtml;
+            modal.classList.add('active');
+        }
+
         function filterInventory() {
             const search = document.getElementById('inventorySearch')?.value.toLowerCase() || '';
+            const categoryFilter = document.getElementById('inventoryCategoryFilter')?.value || 'all';
+            const stockFilter = document.getElementById('inventoryStockFilter')?.value || 'all';
+            const sortFilter = document.getElementById('inventorySortFilter')?.value || 'name-asc';
+
             let filtered = items;
 
+            // Search filter
             if (search) {
                 filtered = filtered.filter(i => i.name.toLowerCase().includes(search));
             }
 
-            const html = filtered.map(item => `
-                <div class="list-item">
+            // Category filter
+            if (categoryFilter !== 'all') {
+                filtered = filtered.filter(i => i.category === categoryFilter);
+            }
+
+            // Stock status filter
+            if (stockFilter === 'low') {
+                filtered = filtered.filter(i => i.stock < i.lowStockThreshold && i.stock > 0);
+            } else if (stockFilter === 'instock') {
+                filtered = filtered.filter(i => i.stock >= i.lowStockThreshold);
+            } else if (stockFilter === 'outofstock') {
+                filtered = filtered.filter(i => i.stock === 0);
+            }
+
+            // Sorting
+            const [sortBy, sortOrder] = sortFilter.split('-');
+            filtered.sort((a, b) => {
+                let compareA, compareB;
+
+                if (sortBy === 'name') {
+                    compareA = a.name.toLowerCase();
+                    compareB = b.name.toLowerCase();
+                } else if (sortBy === 'price') {
+                    compareA = a.price;
+                    compareB = b.price;
+                } else if (sortBy === 'stock') {
+                    compareA = a.stock;
+                    compareB = b.stock;
+                }
+
+                if (sortOrder === 'asc') {
+                    return compareA > compareB ? 1 : -1;
+                } else {
+                    return compareA < compareB ? 1 : -1;
+                }
+            });
+
+            const html = filtered.map(item => {
+                const isLowStock = item.stock < item.lowStockThreshold;
+                const isOutOfStock = item.stock === 0;
+
+                return `
+                <div class="list-item" style="${isLowStock ? 'border-left:4px solid var(--warning);' : ''} ${isOutOfStock ? 'border-left:4px solid var(--danger);' : ''}">
                     <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                        <span style="font-weight:600;">${item.name}</span>
-                        <span class="badge ${item.stock < item.lowStockThreshold ? 'danger' : 'success'}">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            ${isOutOfStock ? '<span style="font-size:18px;">❌</span>' : isLowStock ? '<span style="font-size:18px;">⚠️</span>' : ''}
+                            <span style="font-weight:600;">${item.name}</span>
+                        </div>
+                        <span class="badge ${isOutOfStock ? 'danger' : isLowStock ? 'warning' : 'success'}">
                             Stock: ${item.stock}
                         </span>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:14px; color:var(--text-muted);">
                         <span>${item.category}</span>
-                        <span>₹${item.price}</span>
+                        <span style="font-weight:600;">₹${item.price}</span>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
 
-            document.getElementById('inventoryList').innerHTML = html;
+            const resultsInfo = filtered.length === items.length
+                ? `<div style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">Showing all ${filtered.length} items</div>`
+                : `<div style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">Showing ${filtered.length} of ${items.length} items</div>`;
+
+            const lowStockCount = filtered.filter(i => i.stock < i.lowStockThreshold && i.stock > 0).length;
+            const outOfStockCount = filtered.filter(i => i.stock === 0).length;
+
+            const alertBanner = (lowStockCount > 0 || outOfStockCount > 0) ? `
+                <div style="background:var(--bg); padding:12px; border-radius:12px; margin-bottom:12px; border-left:4px solid var(--warning);">
+                    ${lowStockCount > 0 ? `<div style="font-size:13px; color:var(--warning);">⚠️ ${lowStockCount} item(s) running low</div>` : ''}
+                    ${outOfStockCount > 0 ? `<div style="font-size:13px; color:var(--danger);">❌ ${outOfStockCount} item(s) out of stock</div>` : ''}
+                </div>
+            ` : '';
+
+            const emptyState = filtered.length === 0 ?
+                '<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-text">No items found</div></div>' : '';
+
+            document.getElementById('inventoryList').innerHTML = alertBanner + resultsInfo + (html || emptyState);
         }
 
         function renderPayments() {
             const pending = bills.filter(b => b.paymentStatus === 'pending');
-            const recent = bills.filter(b => b.paymentStatus === 'paid').slice(0, 10);
-
             const pendingHtml = pending.length ? pending.map(bill => `
                 <div class="list-item" onclick="markPaid('${bill.id}')">
                     <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
