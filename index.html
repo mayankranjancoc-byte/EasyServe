@@ -950,6 +950,9 @@
     </div>
     </div>
 
+    <!-- Tesseract.js OCR Library -->
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js'></script>
+
     <script>
         // Initialize app with dummy data
         const CATEGORIES = ['All', 'Grocery', 'Dairy', 'Snacks', 'Beverages', 'Household', 'Personal Care', 'Stationery'];
@@ -1396,9 +1399,157 @@
             reader.readAsDataURL(file);
         }
 
-        function processOCR(imageData) {
-            showToast('Processing bill with OCR...', 'success');
-            simulateOCR();
+        async function processOCR(imageData) {
+            document.getElementById('uploadOptions').style.display = 'none';
+            const ocrResultDiv = document.getElementById('ocrResult');
+            ocrResultDiv.style.display = 'block';
+
+            // Show progress indicator
+            const ocrItemsDiv = document.getElementById('ocrItems');
+            ocrItemsDiv.innerHTML = `
+                <div style="text-align:center; padding:40px 20px;">
+                    <div style="font-size:48px; margin-bottom:16px;">🔍</div>
+                    <div style="font-weight:600; margin-bottom:8px;">Processing Image with OCR...</div>
+                    <div style="font-size:14px; color:var(--text-muted); margin-bottom:16px;" id="ocrProgress">Initializing...</div>
+                    <div style="background:var(--bg); height:8px; border-radius:4px; overflow:hidden;">
+                        <div id="ocrProgressBar" style="background:linear-gradient(90deg, var(--primary), var(--accent)); height:100%; width:0%; transition:width 0.3s;"></div>
+                    </div>
+                </div>
+            `;
+
+            try {
+                const worker = await Tesseract.createWorker({
+                    logger: m => {
+                        const progressBar = document.getElementById('ocrProgressBar');
+                        const progressText = document.getElementById('ocrProgress');
+                        if (progressBar && progressText && m.status) {
+                            const percent = Math.round(m.progress * 100);
+                            progressBar.style.width = percent + '%';
+                            progressText.textContent = `${m.status}: ${percent}%`;
+                        }
+                    }
+                });
+
+                await worker.loadLanguage('eng');
+                await worker.initialize('eng');
+                const { data: { text, confidence } } = await worker.recognize(imageData);
+                await worker.terminate();
+
+                // Parse extracted text
+                parseOCRText(text, confidence);
+
+            } catch (error) {
+                console.error('OCR Error:', error);
+                showToast('OCR failed. Please try Demo Mode or manual entry.', 'error');
+                ocrItemsDiv.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">⚠️</div>
+                        <div class="empty-text">OCR processing failed</div>
+                        <div style="font-size:13px; color:var(--text-muted); margin-top:8px;">
+                            Try: Better lighting, clearer image, or use Demo Mode
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function parseOCRText(rawText, overallConfidence) {
+            const lines = rawText.split('\n').filter(line => line.trim().length > 0);
+            const ocrParsed = [];
+
+            // Try to parse each line for: item name, quantity, price
+            lines.forEach(line => {
+                // Pattern 1: "ItemName 2 40" or "ItemName x2 40"
+                const pattern1 = /^(.+?)\s+[xX×]?(\d+)\s+(\d+)$/;
+                // Pattern 2: "ItemName Qty:2 Price:40"
+                const pattern2 = /^(.+?)\s+(?:qty|quantity|q):?\s*(\d+)\s+(?:price|rate|rs?|₹)?:?\s*(\d+)/i;
+                // Pattern 3: Just find numbers in the line
+                const numbers = line.match(/\d+/g) || [];
+
+                let match;
+                if ((match = line.match(pattern1)) || (match = line.match(pattern2))) {
+                    const name = match[1].trim();
+                    const qty = parseInt(match[2]);
+                    const rate = parseInt(match[3]);
+
+                    // Try to match with existing items
+                    const matchedItem = items.find(i =>
+                        i.name.toLowerCase().includes(name.toLowerCase()) ||
+                        name.toLowerCase().includes(i.name.toLowerCase().split(' ')[0])
+                    );
+
+                    ocrParsed.push({
+                        text: line,
+                        name: matchedItem ? matchedItem.name : name,
+                        qty: qty || 1,
+                        rate: rate || 0,
+                        confidence: overallConfidence / 100
+                    });
+                } else if (numbers.length >= 2) {
+                    // Try to extract quantity and price from numbers found
+                    const name = line.replace(/\d+/g, '').trim();
+                    if (name.length > 2) {
+                        const matchedItem = items.find(i =>
+                            i.name.toLowerCase().includes(name.toLowerCase()) ||
+                            name.toLowerCase().includes(i.name.toLowerCase().split(' ')[0])
+                        );
+
+                        ocrParsed.push({
+                            text: line,
+                            name: matchedItem ? matchedItem.name : name,
+                            qty: parseInt(numbers[numbers.length - 2]) || 1,
+                            rate: parseInt(numbers[numbers.length - 1]) || 0,
+                            confidence: (overallConfidence / 100) * 0.7 // Lower confidence for pattern3
+                        });
+                    }
+                }
+            });
+
+            if (ocrParsed.length === 0) {
+                showToast('No bill items detected. Try Demo Mode.', 'warning');
+                document.getElementById('ocrItems').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📝</div>
+                        <div class="empty-text">No items detected</div>
+                        <div style="font-size:13px; color:var(--text-muted); margin-top:8px; max-width:280px; margin-left:auto; margin-right:auto;">
+                            Make sure the bill has clear text with item names, quantities, and prices
+                        </div>
+                        <div style="margin-top:16px; padding:12px; background:var(--bg); border-radius:8px; font-size:12px; text-align:left;">
+                            <strong>Extracted text:</strong><br>
+                            <pre style="margin-top:8px; white-space:pre-wrap; font-family:monospace; font-size:11px;">${rawText}</pre>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Store globally
+            ocrData = ocrParsed;
+
+            // Display parsed results
+            const avgConfidence = ocrParsed.reduce((sum, item) => sum + item.confidence, 0) / ocrParsed.length;
+            document.querySelector('#ocrResult .section-title .badge').textContent = `Avg Confidence: ${Math.round(avgConfidence * 100)}%`;
+
+            const html = ocrParsed.map((item, idx) => `
+                <div class="list-item" style="${item.confidence < 0.75 ? 'border-left:4px solid var(--warning);' : ''}">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                        <div style="font-size:13px; color:var(--text-muted);">
+                            Detected: "${item.text}"
+                        </div>
+                        <span class="badge ${item.confidence >= 0.85 ? 'success' : (item.confidence >= 0.75 ? 'warning' : 'danger')}">
+                            ${Math.round(item.confidence * 100)}%
+                        </span>
+                    </div>
+                    <div style="display:flex; gap:12px;">
+                        <input type="text" value="${item.name}" style="flex:1;" id="ocr_name_${idx}" placeholder="Item name">
+                        <input type="number" value="${item.qty}" style="width:60px;" id="ocr_qty_${idx}" min="1" placeholder="Qty">
+                        <input type="number" value="${item.rate}" style="width:80px;" id="ocr_rate_${idx}" min="0" placeholder="Price">
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('ocrItems').innerHTML = html;
+            showToast(`Found ${ocrParsed.length} items with ${Math.round(avgConfidence * 100)}% confidence`, 'success');
         }
 
         function resetOCR() {
@@ -1406,6 +1557,7 @@
             document.getElementById('imagePreview').style.display = 'none';
             document.getElementById('uploadOptions').style.display = 'block';
             document.getElementById('fileInput').value = '';
+            ocrData = null;
         }
 
         function simulateOCR() {
