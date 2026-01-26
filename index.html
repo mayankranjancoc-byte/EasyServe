@@ -1275,8 +1275,16 @@
             `).join('');
 
             const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-            document.getElementById('cartItems').innerHTML = html;
+            const cartItemsContainer = document.getElementById('cartItems');
+            cartItemsContainer.innerHTML = html;
             document.getElementById('cartTotal').textContent = `₹${total}`;
+
+            // Add scrollable class if there are many items (4+) to show scroll indicator
+            if (cart.length >= 4) {
+                cartItemsContainer.classList.add('scrollable');
+            } else {
+                cartItemsContainer.classList.remove('scrollable');
+            }
         }
 
         function updateQty(itemId, delta) {
