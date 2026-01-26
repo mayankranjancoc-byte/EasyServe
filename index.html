@@ -1025,51 +1025,83 @@
 
         <!-- Checkout Modal -->
         <div class="modal" id="checkoutModal">
-            <div class="modal-content">
-                <h2 style="font-family:'Poppins',sans-serif; margin-bottom:20px;">Complete Payment</h2>
-                <div id="checkoutCart"></div>
-                <div style="margin:20px 0; padding:16px; background:var(--bg); border-radius:12px;">
-                    <div style="margin-bottom:12px;">
-                        <label style="display:block; margin-bottom:8px; font-weight:600;">Discount (₹)</label>
-                        <input type="number" id="discountInput" value="0" min="0"
-                            style="width:100%; padding:12px; border:2px solid var(--border); border-radius:8px;">
+            <div class="modal-content" style="max-width:400px;">
+                <h2 style="font-family:'Poppins',sans-serif; margin-bottom:16px;">Complete Bill</h2>
+
+                <div style="margin-bottom:16px;">
+                    <label style="display:block; font-weight:600; margin-bottom:8px;">Customer Name (Optional)</label>
+                    <input type="text" id="customerNameInput" placeholder="Walk-in Customer"
+                        style="width:100%; padding:12px; border:2px solid var(--border); border-radius:8px; font-size:15px;">
+                </div>
+
+                <div style="background:var(--bg); padding:12px; border-radius:12px; margin-bottom:16px;">
+                    <div style="font-weight:600; margin-bottom:8px;">Items:</div>
+                    <div id="checkoutCart"></div>
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <label style="display:block; font-weight:600; margin-bottom:8px;">Discount (₹)</label>
+                    <input type="number" id="discountInput" value="0" min="0" oninput="updateCheckoutTotal()"
+                        style="width:100%; padding:12px; border:2px solid var(--border); border-radius:8px; font-size:15px;">
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <label style="display:block; font-weight:600; margin-bottom:8px;">Payment Method</label>
+                    <select id="paymentMethod"
+                        style="width:100%; padding:12px; border:2px solid var(--border); border-radius:8px; font-size:15px;">
+                        <option value="cash">Cash</option>
+                        <option value="card">Card</option>
+                        <option value="upi">UPI</option>
+                        <option value="pending">Pending (Mark as Unpaid)</option>
+                    </select>
+                </div>
+
+                <div style="background:var(--bg); padding:16px; border-radius:12px; margin-bottom:16px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                        <span>Subtotal:</span>
+                        <span id="checkoutSubtotal">₹0</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                        <span>Discount:</span>
+                        <span id="checkoutDiscount">- ₹0</span>
                     </div>
                     <div
-                        style="display:flex; justify-content:space-between; align-items:center; font-size:20px; font-weight:700; margin-top:16px;">
+                        style="display:flex; justify-content:space-between; font-weight:700; font-size:18px; padding-top:8px; border-top:2px dashed var(--border);">
                         <span>Total:</span>
                         <span id="checkoutTotal" style="color:var(--primary);">₹0</span>
                     </div>
                 </div>
-                <option value="upi">UPI</option>
-                <option value="pending">Mark as Pending</option>
-                </select>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <button class="btn-secondary"
+                        onclick="document.getElementById('checkoutModal').classList.remove('active')">Cancel</button>
+                    <button class="btn-primary" onclick="completePayment()">Complete Bill</button>
+                </div>
             </div>
-            <button class="btn-primary" onclick="completePayment()">Complete Bill</button>
-            <button class="btn-secondary" onclick="closeModal()" style="margin-top:12px;">Cancel</button>
         </div>
-    </div>
 
-    <!-- Bill Preview Modal -->
-    <div class="modal" id="billPreviewModal">
-        <div class="modal-content" style="max-width:400px;">
-            <div
-                style="text-align:center; margin-bottom:20px; padding-bottom:16px; border-bottom:2px dashed var(--border);">
-                <h2 style="font-family:'Poppins',sans-serif; margin-bottom:8px; font-size:22px;">SHARMA GENERAL STORE
-                </h2>
-                <div style="font-size:12px; color:var(--text-muted);">Near Main Market, Delhi - 110001</div>
-                <div style="font-size:12px; color:var(--text-muted);">Ph: +91 98765 43210</div>
+        <!-- Bill Preview Modal -->
+        <div class="modal" id="billPreviewModal">
+            <div class="modal-content" style="max-width:400px;">
+                <div
+                    style="text-align:center; margin-bottom:20px; padding-bottom:16px; border-bottom:2px dashed var(--border);">
+                    <h2 style="font-family:'Poppins',sans-serif; margin-bottom:8px; font-size:22px;">SHARMA GENERAL
+                        STORE
+                    </h2>
+                    <div style="font-size:12px; color:var(--text-muted);">Near Main Market, Delhi - 110001</div>
+                    <div style="font-size:12px; color:var(--text-muted);">Ph: +91 98765 43210</div>
+                </div>
+                <div id="billPreviewContent"></div>
+
+                <!-- Export Options -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:20px;">
+                    <button class="btn-secondary" onclick="exportBillAsText()">📋 Copy Text</button>
+                    <button class="btn-secondary" onclick="printBill()">🖨️ Print</button>
+                </div>
+
+                <button class="btn-primary" onclick="closeBillPreview()" style="margin-top:12px;">Close</button>
             </div>
-            <div id="billPreviewContent"></div>
-
-            <!-- Export Options -->
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:20px;">
-                <button class="btn-secondary" onclick="exportBillAsText()">📋 Copy Text</button>
-                <button class="btn-secondary" onclick="printBill()">🖨️ Print</button>
-            </div>
-
-            <button class="btn-primary" onclick="closeBillPreview()" style="margin-top:12px;">Close</button>
         </div>
-    </div>
     </div>
 
     <!-- Tesseract.js OCR Library -->
