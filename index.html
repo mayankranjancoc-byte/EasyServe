@@ -2274,8 +2274,11 @@ Thank you for your business!
                 </div>
             `).join('') : '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-text">No pending bills</div></div>';
 
+            const recent = bills.filter(b => b.paymentStatus === 'paid').sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
+
             const recentHtml = recent.map(bill => `
-                <div class="list-item">
+            const recentHtml = recent.map(bill => `
+                < div class= "list-item" >
                     <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
                         <span style="font-weight:600;">Bill #${bill.id.slice(-6)}</span>
                         <span style="font-weight:700; color:var(--success);">₹${bill.total}</span>
@@ -2283,8 +2286,8 @@ Thank you for your business!
                     <div style="font-size:14px; color:var(--text-muted);">
                         ${new Date(bill.date).toLocaleDateString()} • ${bill.paymentMethod.toUpperCase()}
                     </div>
-                </div>
-            `).join('');
+                </div >
+                `).join('');
 
             document.getElementById('pendingBills').innerHTML = pendingHtml;
             document.getElementById('recentPayments').innerHTML = recentHtml;
@@ -2353,29 +2356,29 @@ Thank you for your business!
             } else if (lower.includes('stock')) {
                 const itemName = lower.split('of')[1]?.trim() || 'sugar';
                 const item = items.find(i => i.name.toLowerCase().includes(itemName));
-                response = item ? `${item.name}: ${item.stock} units available` : `Item "${itemName}" not found`;
+                response = item ? `${ item.name }: ${ item.stock } units available` : `Item "${itemName}" not found`;
             } else if (lower.includes('sales') || lower.includes('today')) {
                 const today = new Date().toDateString();
                 const todayBills = bills.filter(b => new Date(b.date).toDateString() === today);
                 const total = todayBills.reduce((sum, b) => sum + b.total, 0);
                 response = `Today's sales: ₹${total} from ${todayBills.length} bills`;
-            } else if (lower.includes('pending') || lower.includes('payment')) {
-                const pending = bills.filter(b => b.paymentStatus === 'pending');
-                const amount = pending.reduce((sum, b) => sum + b.total, 0);
-                response = `${pending.length} pending bills totaling ₹${amount}`;
-            } else if (lower.includes('low stock') || lower.includes('list low')) {
-                const lowStock = items.filter(i => i.stock < i.lowStockThreshold);
-                if (lowStock.length > 0) {
-                    response = `${lowStock.length} items are low on stock: ${lowStock.slice(0, 5).map(i => i.name).join(', ')}${lowStock.length > 5 ? ', and more...' : ''}`;
-                } else {
-                    response = 'All items are sufficiently stocked!';
-                }
+        } else if (lower.includes('pending') || lower.includes('payment')) {
+            const pending = bills.filter(b => b.paymentStatus === 'pending');
+            const amount = pending.reduce((sum, b) => sum + b.total, 0);
+            response = `${pending.length} pending bills totaling ₹${amount}`;
+        } else if (lower.includes('low stock') || lower.includes('list low')) {
+            const lowStock = items.filter(i => i.stock < i.lowStockThreshold);
+            if (lowStock.length > 0) {
+                response = `${lowStock.length} items are low on stock: ${lowStock.slice(0, 5).map(i => i.name).join(', ')}${lowStock.length > 5 ? ', and more...' : ''}`;
             } else {
-                response = 'I can help you:\n• Create bills\n• Check stock\n• View sales\n• Track payments\n• List low stock items\n\nTry: "list low stock items"';
+                response = 'All items are sufficiently stocked!';
             }
+        } else {
+            response = 'I can help you:\n• Create bills\n• Check stock\n• View sales\n• Track payments\n• List low stock items\n\nTry: "list low stock items"';
+        }
 
-            chatHistory.push({ type: 'assistant', text: response });
-            renderChat();
+        chatHistory.push({ type: 'assistant', text: response });
+        renderChat();
         }
 
         function renderChat() {
