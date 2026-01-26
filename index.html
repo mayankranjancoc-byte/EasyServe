@@ -1136,6 +1136,7 @@
             renderBillingScreen();
             renderInventory();
             renderPayments();
+            renderChat();
         }
 
         function generateDummyData() {
@@ -2405,7 +2406,10 @@ Thank you for your business!
         }
 
         let isListening = false;
-        let chatHistory = [];
+        let chatHistory = [{
+            type: 'assistant',
+            text: "Hi! I'm EasyServe Assistant. Try:\n• 'Create bill for 2 milk'\n• 'Check stock of sugar'\n• 'Show today's sales'"
+        }];
 
         function toggleVoice() {
             isListening = !isListening;
@@ -2482,7 +2486,7 @@ Thank you for your business!
 
         function renderChat() {
             const html = chatHistory.map(msg => `
-                <div class="message-bubble ${msg.type}">${msg.text}</div>
+                <div class="message-bubble ${msg.type}" style="white-space: pre-wrap;">${msg.text}</div>
             `).join('');
             document.getElementById('chatHistory').innerHTML = html;
         }
