@@ -1367,7 +1367,8 @@
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0);
 
-            const imageData = canvas.toDataURL('image/jpeg');
+            // Compress image for better OCR performance (0.8 quality)
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
             closeCamera();
 
             const preview = document.getElementById('imagePreview');
