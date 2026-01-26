@@ -1415,11 +1415,19 @@
             `;
 
             try {
-                // Convert base64 image for OCR.space API
-                const base64Data = imageData.includes('base64,') ? imageData.split('base64,')[1] : imageData;
+                // Prepare image data for OCR.space API
                 const formData = new FormData();
 
-                formData.append('base64Image', `data:image/png;base64,${base64Data}`);
+                // If imageData is already a full data URL, use it directly
+                // Otherwise, assume it's base64 and add the data URL prefix
+                if (imageData.startsWith('data:image')) {
+                    formData.append('base64Image', imageData);
+                    console.log('Using data URL directly');
+                } else {
+                    const cleanBase64 = imageData.replace(/^data:image\/\w+;base64,/, '');
+                    formData.append('base64Image', `data:image/jpeg;base64,${cleanBase64}`);
+                    console.log('Created data URL from base64');
+                }
                 formData.append('language', 'eng');
                 formData.append('isOverlayRequired', 'false');
                 formData.append('detectOrientation', 'true');
