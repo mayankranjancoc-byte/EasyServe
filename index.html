@@ -1419,16 +1419,10 @@
                 // Prepare image data for OCR.space API
                 const formData = new FormData();
 
-                // If imageData is already a full data URL, use it directly
-                // Otherwise, assume it's base64 and add the data URL prefix
-                if (imageData.startsWith('data:image')) {
-                    formData.append('base64Image', imageData);
-                    console.log('Using data URL directly');
-                } else {
-                    const cleanBase64 = imageData.replace(/^data:image\/\w+;base64,/, '');
-                    formData.append('base64Image', `data:image/jpeg;base64,${cleanBase64}`);
-                    console.log('Created data URL from base64');
-                }
+                // Remove data:image/...;base64, prefix - OCR.space needs only base64
+const cleanBase64 = imageData.replace(/^data:image\/\w+;base64,/, '');
+
+formData.append('base64Image', cleanBase64);
                 formData.append('language', 'eng');
                 formData.append('isOverlayRequired', 'false');
                 formData.append('detectOrientation', 'true');
