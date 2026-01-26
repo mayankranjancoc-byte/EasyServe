@@ -1437,13 +1437,13 @@
 
             } catch (error) {
                 console.error('OCR Error:', error);
-                showToast('OCR failed. Please try Demo Mode or manual entry.', 'error');
+                showToast('OCR failed. Try better lighting or Demo Mode.', 'error');
                 ocrItemsDiv.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">⚠️</div>
                         <div class="empty-text">OCR processing failed</div>
                         <div style="font-size:13px; color:var(--text-muted); margin-top:8px;">
-                            Try: Better lighting, clearer image, or use Demo Mode
+                            ${error.message || 'Try again with better lighting or use Demo Mode'}
                         </div>
                     </div>
                 `;
