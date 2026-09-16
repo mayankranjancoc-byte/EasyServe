@@ -1,12 +1,9 @@
+from pathlib import Path
 import re
 
-# Read the index.html file
-with open('index.html', 'r', encoding='utf-8') as f:
-    content = f.read()
+FILE_PATH = Path("index.html")
 
-# Checkout modal HTML to insert
-checkout_modal = '''
-    <!-- Checkout Modal -->
+CHECKOUT_MODAL = """    <!-- Checkout Modal -->
     <div class="modal" id="checkoutModal">
         <div class="modal-content" style="max-width:400px;">
             <h2 style="font-family:'Poppins',sans-serif; margin-bottom:16px;">Complete Bill</h2>
@@ -60,25 +57,9 @@ checkout_modal = '''
             </div>
         </div>
     </div>
+"""
 
-'''
-
-# Check if modal already exists
-if 'id="checkoutModal"' not in content:
-    # Insert before Bottom Navigation comment
-    content = content.replace('        <!-- Bottom Navigation -->', checkout_modal + '        <!-- Bottom Navigation -->')
-    print("✓ Inserted checkout modal")
-else:
-    print("✓ Checkout modal already exists")
-
-# Fix updateCheckoutTotal function
-old_function = '''        function updateCheckoutTotal() {
-            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-            const discount = parseInt(document.getElementById('discountInput').value) || 0;
-            document.getElementById('checkoutTotal').textContent = `₹${subtotal - discount}`;
-        }'''
-
-new_function = '''        function updateCheckoutTotal() {
+NEW_FUNCTION = """        function updateCheckoutTotal() {
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
             const discount = parseInt(document.getElementById('discountInput')?.value) || 0;
             const total = subtotal - discount;
@@ -90,16 +71,53 @@ new_function = '''        function updateCheckoutTotal() {
                 document.getElementById('checkoutDiscount').textContent = `- ₹${discount}`;
             }
             document.getElementById('checkoutTotal').textContent = `₹${total}`;
-        }'''
+        }"""
 
-if old_function in content:
-    content = content.replace(old_function, new_function)
-    print("✓ Updated updateCheckoutTotal function")
-else:
-    print("✓ Function already updated or not found")
 
-# Write back
-with open('index.html', 'w', encoding='utf-8') as f:
-    f.write(content)
+def update_html_file(path: Path) -> None:
+    if not path.exists():
+        print(f"Error: {path} not found.")
+        return
 
-print("\n✅ Done! Checkout modal added successfully.")
+    content = path.read_text(encoding="utf-8")
+    modified = False
+
+    # 1. Insert Checkout Modal
+    if 'id="checkoutModal"' not in content:
+        anchor_pattern = re.compile(r"([ \t]*<!--\s*Bottom Navigation\s*-->)")
+        if anchor_pattern.search(content):
+            content = anchor_pattern.sub(f"{CHECKOUT_MODAL}\n\\1", content, count=1)
+            modified = True
+            print("✓ Inserted checkout modal")
+        else:
+            print("⚠️ Anchor <!-- Bottom Navigation --> not found; modal was not inserted.")
+    else:
+        print("✓ Checkout modal already exists")
+
+    # 2. Update updateCheckoutTotal function
+    func_pattern = re.compile(
+        r"[ \t]*function\s+updateCheckoutTotal\s*\(\)\s*\{.*?\n[ \t]*\}",
+        re.DOTALL,
+    )
+
+    if func_pattern.search(content):
+        # Only rewrite if it doesn't already contain the new logic
+        if "checkoutSubtotal" not in content:
+            content = func_pattern.sub(NEW_FUNCTION, content, count=1)
+            modified = True
+            print("✓ Updated updateCheckoutTotal function")
+        else:
+            print("✓ Function already up-to-date")
+    else:
+        print("⚠️ function updateCheckoutTotal() not found")
+
+    # 3. Write changes only if needed
+    if modified:
+        path.write_text(content, encoding="utf-8")
+        print("\n✅ File saved successfully.")
+    else:
+        print("\nℹ️ No modifications required.")
+
+
+if __name__ == "__main__":
+    update_html_file(FILE_PATH)
