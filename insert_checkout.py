@@ -1,6 +1,8 @@
 from pathlib import Path
 import re
-
+# dfsjhbfjh
+#fbfgddfj
+#nffrrfg
 FILE_PATH = Path("index.html")
 
 CHECKOUT_MODAL = """    <!-- Checkout Modal -->
