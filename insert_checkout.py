@@ -2,6 +2,7 @@ from pathlib import Path
 import re
 
 #Mayank is teaching nishi
+# mayank is pro
 FILE_PATH = Path("index.html")
 
 CHECKOUT_MODAL = """    <!-- Checkout Modal -->
