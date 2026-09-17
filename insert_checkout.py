@@ -1,12 +1,7 @@
 from pathlib import Path
 import re
-# dfsjhbfjh
-#fbfgddfj
-#nffrrfg
 
-#ohdofg
-#slkjfb
-#vsldkfkls
+#Mayank is teaching nishi
 FILE_PATH = Path("index.html")
 
 CHECKOUT_MODAL = """    <!-- Checkout Modal -->
